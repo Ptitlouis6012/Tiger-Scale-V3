@@ -310,16 +310,26 @@ language set as the firmware since PT-PT joined it).
   one already knew.
 - **Binaries** go to GitHub Releases, never into git. A committed binary stays in
   the history forever, even after it is deleted.
-- **[`docs/ROADMAP.md`](docs/ROADMAP.md) holds the work that was found and
-  deferred.** A line goes in the moment the finding is made, not when someone
-  decides to schedule it — a finding that waits to be planned before it is
-  written down is a finding that is forgotten. But check that it earns its place
-  first: the file's own admission test is five questions, and the two that get
-  skipped are "is this verified rather than suspected" and "could I just do it
-  now instead". A roadmap everything enters is a roadmap nobody reads, and the
-  real defect drowns among the preferences. Every entry states what is wrong,
-  what it costs not to fix, **and why it was deferred** — that last one is what
-  stops the next session re-opening the argument from scratch.
+- **Deferred work goes to GitHub issues**, not to a file. `gh issue list` is the
+  backlog; there is no `ROADMAP.md` and there should not be one — a second place
+  is a second thing to keep true. An issue goes in the moment the finding is
+  made, not when someone decides to schedule it: a finding that waits to be
+  planned before it is written down is a finding that is forgotten.
+
+  But check that it earns its place first, because a tracker everything enters
+  is a tracker nobody reads and the real defect drowns among the preferences:
+
+  1. **verified, not suspected** — open the code, name the file and the line;
+  2. **the consequence has a name** — what breaks, for whom, in what case. An
+     entry without one is a preference;
+  3. **not already held** by a guard, a test, or the code itself;
+  4. **not doable now** — if the fix fits in the current task, do it;
+  5. **it outlives the session** — a toolchain hiccup does not belong there.
+
+  State what is wrong, what it costs not to fix, **and why it was deferred**.
+  That last one is the one people skip and the one that stops the next session
+  re-opening the argument from scratch.
+
 - **Reviews** live in [`docs/reviews/`](docs/reviews/), one file each, kept
   permanently, worked from the standing brief in
   [`docs/REVIEW-BRIEF.md`](docs/REVIEW-BRIEF.md). After acting on one, annotate

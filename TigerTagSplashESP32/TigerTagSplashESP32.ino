@@ -31,18 +31,18 @@
 //   UNIFIED WS FRAME BUILDER                              9567- 9691
 //   WEIGHT FILTER HELPERS                                 9692- 9706
 //   POST-SEND STATE RESET (shared by all send paths)      9707- 9727
-//   SHARED WEIGHT PUSH HANDLER (used by /api/weight and /api/push-weight)  9728- 9824
-//   WEB SERVER                                            9825-10638
-//   CLOUD COMMUNICATION                                  10639-10821
-//   WEIGH WORKFLOW  (IDLE → SCANNING → STABLE_WAIT → SENDING) 10822-11329
-//   mDNS                                                 11330-11367
-//   SCALE                                                11368-11538
-//   ES8311 codec beep (I2S slave mode, Wire I2C @ 0x18)  11539-11656
-//   RFID                                                 11657-12593
-//   OTA — Over-the-air firmware + filesystem update    12594-13273
-//   LVGL bridge + main weigh screen                      13274-14213
-//   Remote live view: the screen out, taps back in       14214-15058
-//   SETUP & LOOP                                         15059-16224
+//   SHARED WEIGHT PUSH HANDLER (used by /api/weight and /api/push-weight)  9728- 9831
+//   WEB SERVER                                            9832-10645
+//   CLOUD COMMUNICATION                                  10646-10828
+//   WEIGH WORKFLOW  (IDLE → SCANNING → STABLE_WAIT → SENDING) 10829-11336
+//   mDNS                                                 11337-11374
+//   SCALE                                                11375-11545
+//   ES8311 codec beep (I2S slave mode, Wire I2C @ 0x18)  11546-11663
+//   RFID                                                 11664-12600
+//   OTA — Over-the-air firmware + filesystem update    12601-13280
+//   LVGL bridge + main weigh screen                      13281-14220
+//   Remote live view: the screen out, taps back in       14221-15065
+//   SETUP & LOOP                                         15066-16231
 //
 //   To regenerate:  bash scripts/update_toc.sh
 // --- TOC END -----------------------------------------------
@@ -9745,6 +9745,13 @@ static void handleWeightPushBody(AsyncWebServerRequest *request,
         return;
     }
 
+    // No SEND_MAX_ATTEMPTS retry on this path, and that is deliberate: an HTTP
+    // caller is waiting on this response, and the three attempts the weigh
+    // workflow uses span about three seconds. Spending them inside an
+    // ESPAsyncWebServer handler blocks the async TCP task, so every other
+    // request on the device waits with it. The caller gets the failure and can
+    // retry -- it has a network stack of its own. The workflow paths cannot say
+    // that, which is why they are the ones that retry.
     bool ok = false;
     if (allowUidOverride && doc.containsKey("uid")) {
         String uidOverride = String(doc["uid"] | "");
