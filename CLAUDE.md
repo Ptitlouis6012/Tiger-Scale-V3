@@ -244,13 +244,39 @@ is loaded.
    re-runs every wiring. Rebuild only when the whole screen genuinely changed,
    and remember `lv_scr_load(new)` comes before `lv_obj_del(old)`.
 
-**You do not have to photograph the device to see a screen.** Turn on Settings →
-LAN → Live view, open `http://<scale-ip>/live` with the code shown on that page,
-and you get the panel in a browser with clicks going back the other way. It is a
-hardware round-trip saved on every visual change — a mockup is still the first
-step, but this is how you check the real thing afterwards. §LIVE in the .ino,
-and [`docs/FIRMWARE.md`](docs/FIRMWARE.md#live-view) for how it works and what it
-refuses to do to the heap.
+**You do not have to photograph the device to see a screen, or ask anyone to
+touch it.** Two requests, no setup, no access code:
+
+```bash
+curl -s -o s.bmp http://tigerscale-CE3F.local/screen.bmp   # what is on the panel
+curl -s "http://tigerscale-CE3F.local/api/tap?x=415&y=285" # press Settings
+curl -s "http://tigerscale-CE3F.local/api/tap?x=200&y=280&x2=200&y2=90"  # swipe
+```
+
+`/api/tap` answers only once the press has been taken *and* the screen has
+finished changing, so tap and `screen.bmp` chain without inventing a delay — the
+response is the signal. `x2`/`y2` make it a swipe, which is the only way to
+scroll a list from a terminal: LVGL decides drag-or-tap from the movement
+between two input reads, so the press is walked in twelve steps rather than
+jumped. `/screen.ver` is four bytes of frame counter, for polling cheaply
+instead of pulling 450 KB. `/screen` is the same loop for a person — the
+picture, where clicking taps and dragging swipes.
+
+Coordinates are the panel's own 480x320 landscape space. An injected press does
+not bypass screen sleep: on a dark panel it wakes the scale and is swallowed,
+exactly as a finger is, so a remote command can never act on a screen nobody can
+see.
+
+**What this is and is not.** It is what LVGL drew, read out of the canvas.
+Geometry, text, translation, truncation, which screen is up — reliable. Colour
+as the eye sees it, backlight, panel rendering — not. And it cannot see the
+panel itself: anything that changes the flush path or below looks perfect here
+while the glass in the room is wrong, which has happened. For those, ask.
+
+The older §LIVE view still exists and does more — a real-time band stream on
+port 81, `Settings → LAN → Live view`, with an access code. Reach for it when
+you want to watch; reach for the two requests above when you want to check.
+[`docs/FIRMWARE.md`](docs/FIRMWARE.md#live-view) covers both.
 
 ## i18n
 

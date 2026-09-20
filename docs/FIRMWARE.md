@@ -170,6 +170,58 @@ snapshot on connect and every 30 s.
 Because it is *async*, handlers must not block. The heavy Firestore work is
 dispatched to a worker task pinned to core 0 (§14).
 
+## <a id="screen-over-http"></a>Seeing and driving the screen over HTTP
+
+Four routes, no setup and no access code, so checking a screen costs two
+requests instead of a trip to the bench:
+
+| Route | What it gives |
+|---|---|
+| `GET /screen.bmp` | the screen as a 24-bit BMP, 480x320 |
+| `GET /api/tap?x=&y=` | a press; add `x2`/`y2` for a swipe |
+| `GET /screen.ver` | four bytes, the frame counter |
+| `GET /screen` | the picture in a page, click to tap, drag to swipe |
+
+```bash
+curl -s -o s.bmp http://tigerscale-CE3F.local/screen.bmp
+curl -s "http://tigerscale-CE3F.local/api/tap?x=415&y=285"
+curl -s "http://tigerscale-CE3F.local/api/tap?x=200&y=280&x2=200&y2=90"
+```
+
+Three decisions worth keeping:
+
+- **The picture comes from the canvas, not from the panel.** `gfx` is an
+  `Arduino_Canvas`, so a full framebuffer already exists and is by definition
+  what was last drawn -- no mirror sprite, no copy in the flush callback, and no
+  read-back from the AXS15231B, which is slow and unreliable. It is served from
+  a one-memcpy snapshot in PSRAM, because serialising 450 KB takes far longer
+  than a repaint and reading the live canvas would tear across two screens.
+- **A swipe is the press walked in twelve steps.** LVGL decides drag-or-tap from
+  the movement between two consecutive input reads, so a single jump from start
+  to end scrolls nothing at all. Without this, half of any list longer than the
+  screen is unreachable from a terminal -- which is half the point.
+- **`/api/tap` answers late, and waits without sleeping.** It returns once the
+  press has been taken and the screen has finished changing, so the response is
+  the signal that the next capture is worth taking. The waiting is done with
+  `RESPONSE_TRY_AGAIN`; sleeping in a handler blocks the async TCP task and
+  every other request with it.
+
+An injected press does not bypass screen sleep. It goes through `tsRead()`, so
+on a dark panel it wakes the scale and is swallowed exactly as a finger is --
+verified on the bench with the screen asleep and a tap aimed at the Settings
+button, which woke the device onto the home screen. A remote command must never
+act on a screen nobody can see.
+
+**What it is and is not.** It is what LVGL drew. Geometry, text, translation,
+truncation, which screen is up: reliable. Colour as the eye sees it, backlight,
+panel rendering: not. Nor can it see the panel itself, so a change to the flush
+path or below can look perfect here and be wrong on the glass.
+
+A swipe takes about two seconds, and the reason is worth recording: each of its
+twelve steps scrolls the list, which repaints the screen, which costs a full
+307 KB push to the panel -- about **175 ms per step**. A finger pays the same
+price, which is why scrolling feels heavy.
+
 ## Live view
 
 A bench tool: the panel, in a browser, with clicks going back the other way.

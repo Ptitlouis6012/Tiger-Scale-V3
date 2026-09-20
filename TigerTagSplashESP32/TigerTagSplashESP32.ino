@@ -15,34 +15,34 @@
 //
 //   TABLE OF CONTENTS                                     line range
 //   ---------------------------------------------------- -----------
-//   HARDWARE CONFIGURATION                                 230-  423
-//   OTA CONFIGURATION                                      424-  456
-//   FORWARD DECLARATIONS                                   457-  759
-//   WEIGHT ROUNDING                                        760-  779
-//   GLOBAL OBJECTS                                         780- 1441
-//   CONFIGURATION VARIABLES                               1442- 1861
-//   OLED DISPLAY                                          1862- 2639
-//   CLOUD PARSING                                         2640- 2654
-//   WIFI SETUP                                            2655- 7442
-//   LITTLEFS                                              7443- 7742
-//   FIREBASE AUTHENTICATION                               7743- 9404
-//   WEBSOCKET                                             9405- 9431
-//   CLOUD WORKER TASK  (non-blocking Firestore on core 0)  9432- 9566
-//   UNIFIED WS FRAME BUILDER                              9567- 9691
-//   WEIGHT FILTER HELPERS                                 9692- 9706
-//   POST-SEND STATE RESET (shared by all send paths)      9707- 9727
-//   SHARED WEIGHT PUSH HANDLER (used by /api/weight and /api/push-weight)  9728- 9831
-//   WEB SERVER                                            9832-10645
-//   CLOUD COMMUNICATION                                  10646-10828
-//   WEIGH WORKFLOW  (IDLE → SCANNING → STABLE_WAIT → SENDING) 10829-11336
-//   mDNS                                                 11337-11374
-//   SCALE                                                11375-11545
-//   ES8311 codec beep (I2S slave mode, Wire I2C @ 0x18)  11546-11663
-//   RFID                                                 11664-12600
-//   OTA — Over-the-air firmware + filesystem update    12601-13280
-//   LVGL bridge + main weigh screen                      13281-14220
-//   Remote live view: the screen out, taps back in       14221-15065
-//   SETUP & LOOP                                         15066-16231
+//   HARDWARE CONFIGURATION                                 258-  451
+//   OTA CONFIGURATION                                      452-  484
+//   FORWARD DECLARATIONS                                   485-  787
+//   WEIGHT ROUNDING                                        788-  807
+//   GLOBAL OBJECTS                                         808- 1469
+//   CONFIGURATION VARIABLES                               1470- 1889
+//   OLED DISPLAY                                          1890- 2667
+//   CLOUD PARSING                                         2668- 2682
+//   WIFI SETUP                                            2683- 7500
+//   LITTLEFS                                              7501- 7800
+//   FIREBASE AUTHENTICATION                               7801- 9462
+//   WEBSOCKET                                             9463- 9489
+//   CLOUD WORKER TASK  (non-blocking Firestore on core 0)  9490- 9624
+//   UNIFIED WS FRAME BUILDER                              9625- 9749
+//   WEIGHT FILTER HELPERS                                 9750- 9764
+//   POST-SEND STATE RESET (shared by all send paths)      9765- 9785
+//   SHARED WEIGHT PUSH HANDLER (used by /api/weight and /api/push-weight)  9786- 9889
+//   WEB SERVER                                            9890-10913
+//   CLOUD COMMUNICATION                                  10914-11096
+//   WEIGH WORKFLOW  (IDLE → SCANNING → STABLE_WAIT → SENDING) 11097-11604
+//   mDNS                                                 11605-11642
+//   SCALE                                                11643-11813
+//   ES8311 codec beep (I2S slave mode, Wire I2C @ 0x18)  11814-11931
+//   RFID                                                 11932-12868
+//   OTA — Over-the-air firmware + filesystem update    12869-13548
+//   LVGL bridge + main weigh screen                      13549-14488
+//   Remote live view: the screen out, taps back in       14489-15333
+//   SETUP & LOOP                                         15334-16499
 //
 //   To regenerate:  bash scripts/update_toc.sh
 // --- TOC END -----------------------------------------------
@@ -110,6 +110,7 @@ struct MetadataCache { String mfr; String mat; String col; uint32_t productId; }
 #include "icon_bolt.h"            // 8x14 RGB565 charging-bolt icon for the battery status icon
 #include "i18n.h"                 // translation table — edit i18n.h to add/change strings
 #include "live_page.h"            // the live view's browser page — see §LIVE
+#include "screen_page.h"          // the /screen page — same reason it is a header
 
 // Declared immediately after the includes on purpose: the .ino preprocessor
 // inserts every generated function prototype right here, so a type used in a
@@ -198,12 +199,39 @@ struct LiveViewer {
 // in the released state and the press is a clean edge on its own. An explicit
 // gap only added 25-55 ms to every click for a transition that had already
 // happened. Two taps in a row are kept apart by the arming check instead.
+// A swipe is walked in this many steps, one per input read. Twelve is enough
+// for LVGL to build a scroll velocity out of it and short enough to stay under
+// half a second at a 30 ms input period.
+#define SCREEN_W             480
+#define SCREEN_H             320
+#define BMP_HEADER_LEN       54
+#define SCREEN_SWIPE_STEPS   12
+// /api/tap answers once the press has been taken and the screen has had time
+// to finish, and gives up after the longer limit.
+//
+// The limit is generous because a swipe is genuinely slow here, and the number
+// is worth writing down: each of its twelve steps scrolls the list, which
+// repaints the screen, which costs a full 307 KB push to the panel. Measured on
+// the settings list at about **175 ms per step**, so a swipe takes roughly two
+// seconds end to end. A real finger pays exactly the same price, which is why
+// scrolling feels heavy -- see the display-path issue in the tracker.
+#define SCREEN_QUIET_MS      250
+#define SCREEN_DRAWN_MS      400
+#define SCREEN_SETTLE_MAX_MS 3500
+
 enum LiveTapPhase : uint8_t { LIVE_TAP_IDLE = 0, LIVE_TAP_PRESS };
 static volatile uint8_t  gLiveTapPhase = LIVE_TAP_IDLE;
 static volatile uint32_t gLiveTapAtMs  = 0;
 static volatile uint16_t gLiveTapReads = 0;
 static volatile int16_t  gLiveTapX     = 0;
 static volatile int16_t  gLiveTapY     = 0;
+// A swipe is the same injected press walked from (X,Y) to (X2,Y2), one step per
+// read. It is the *movement between two reads* that makes LVGL call it a drag
+// rather than a tap, so a single jump from start to end scrolls nothing: the
+// press has to arrive as a sequence. Steps = 0 means a plain tap.
+static volatile int16_t  gLiveTapX2    = 0;
+static volatile int16_t  gLiveTapY2    = 0;
+static volatile uint16_t gLiveTapSteps = 0;
 
 
 struct PairHttp {
@@ -2726,18 +2754,48 @@ static bool tsRead(int16_t &tx, int16_t &ty) {
     // finger — that is the release edge LVGL turns into a click.
     if (gLiveTapPhase == LIVE_TAP_PRESS) {
         gLiveTapReads++;
-        // Held until it has been sampled twice *and* 30 ms have passed. The
-        // read count is what makes this independent of how often the caller
-        // polls: LV_INDEV_DEF_READ_PERIOD is 30 ms, the post-transition drain
-        // loops poll every 20 ms, tsPollLoop every 50 ms. Two samples is also
-        // what tsWaitTap() requires before it calls a press real.
-        if (gLiveTapReads <= 2 || millis() - gLiveTapAtMs < 30) {
-            tx = gLiveTapX;
-            ty = gLiveTapY;
-            gLastActivityMs = millis();   // a remote tap is activity too
-            return true;
+        const uint16_t steps = gLiveTapSteps;
+
+        if (steps) {
+            // Swipe: one interpolated point per read, so consecutive reads
+            // differ and LVGL's scroll logic sees a finger travelling.
+            if (gLiveTapReads <= steps) {
+                const int32_t k = (int32_t)gLiveTapReads - 1;
+                const int32_t n = (steps > 1) ? (int32_t)steps - 1 : 1;
+                tx = (int16_t)(gLiveTapX + ((int32_t)(gLiveTapX2 - gLiveTapX) * k) / n);
+                ty = (int16_t)(gLiveTapY + ((int32_t)(gLiveTapY2 - gLiveTapY) * k) / n);
+                gLastActivityMs = millis();
+                // Released on the last step, not on the read after it. Waiting
+                // for one more read means waiting for a caller that may have
+                // stopped polling -- the gesture is over when its last point
+                // has been delivered, and /api/tap watches this flag to know it.
+                if (gLiveTapReads >= steps) { gLiveTapSteps = 0; gLiveTapPhase = LIVE_TAP_IDLE; }
+                return true;
+            }
+            gLiveTapSteps = 0;
+            gLiveTapPhase = LIVE_TAP_IDLE;
+        } else {
+            // Held for three reads *and* 30 ms. A press that goes down and up
+            // inside one read is not a press as far as LVGL is concerned. The
+            // read count is what makes this independent of how often the caller
+            // polls: LV_INDEV_DEF_READ_PERIOD is 30 ms, the post-transition
+            // drain loops poll every 20 ms, tsPollLoop every 50 ms.
+            if (gLiveTapReads <= 3 || millis() - gLiveTapAtMs < 30) {
+                tx = gLiveTapX;
+                ty = gLiveTapY;
+                gLastActivityMs = millis();   // a remote tap is activity too
+                return true;
+            }
+            gLiveTapPhase = LIVE_TAP_IDLE;
         }
-        gLiveTapPhase = LIVE_TAP_IDLE;
+
+        // Safety net for both: a press nobody ever samples again -- a screen
+        // builder can stop polling for a while -- must not leave the machine
+        // armed, or the next request is swallowed by the one before it.
+        if (gLiveTapPhase == LIVE_TAP_PRESS && millis() - gLiveTapAtMs > 800) {
+            gLiveTapSteps = 0;
+            gLiveTapPhase = LIVE_TAP_IDLE;
+        }
     }
 
     if (!_touchI2CReady) return false;
@@ -9832,6 +9890,7 @@ static const char POLL_PATCH_JS[] PROGMEM = R"==(
 // §19 — WEB SERVER
 // ============================================================================
 
+
 void setupWebServer() {
 
 
@@ -10300,6 +10359,215 @@ void setupWebServer() {
 
     server.on("/api/ping", HTTP_GET, [](AsyncWebServerRequest *request){
         request->send(200, "text/plain", "pong");
+    });
+
+    // ---- Driving the screen from a terminal --------------------------------
+    // Two stateless requests, so "does it look right?" is a question this
+    // firmware answers itself instead of asking whoever is near the bench.
+    // §LIVE still does more -- a real-time band stream -- but an agent taking
+    // one picture and pressing one thing should not have to speak a protocol.
+    //
+    // The frame counter, four bytes. /screen.bmp is 450 KB; this is what you
+    // poll to find out whether the panel has actually repainted since you last
+    // looked, so the picture is only fetched when there is a new one.
+    server.on("/screen.ver", HTTP_GET, [](AsyncWebServerRequest *request){
+        uint32_t seq = gLiveFrameSeq;
+        uint8_t  b[4] = { (uint8_t)(seq), (uint8_t)(seq >> 8),
+                          (uint8_t)(seq >> 16), (uint8_t)(seq >> 24) };
+        AsyncWebServerResponse *r =
+            request->beginResponse_P(200, "application/octet-stream", b, 4);
+        r->addHeader("Cache-Control", "no-store");
+        request->send(r);
+    });
+
+    // The same closed loop for a person: the picture, clickable. A click taps,
+    // a drag swipes, and the coordinates come off the image's own
+    // getBoundingClientRect() so the mapping survives CSS scaling on a phone.
+    // It polls /screen.ver, four bytes, and only fetches the 450 KB picture
+    // when the panel has actually repainted.
+    server.on("/screen", HTTP_GET, [](AsyncWebServerRequest *request){
+        AsyncWebServerResponse *r =
+            request->beginResponse_P(200, "text/html; charset=utf-8", SCREEN_PAGE);
+        r->addHeader("Cache-Control", "no-store");
+        request->send(r);
+    });
+
+    // The screen as a picture.
+    //
+    // No mirror sprite and no copy in the flush callback: `gfx` is an
+    // Arduino_Canvas, so a full 480x320 framebuffer already exists and is by
+    // definition what was last drawn. It is not read from the panel -- reading
+    // an AXS15231B back is slow and unreliable, and pointless when the source
+    // of truth is in RAM.
+    //
+    // It is served from a snapshot, not from the canvas itself. Serialising
+    // 450 KB takes far longer than a repaint, so reading the live framebuffer
+    // would hand out pictures torn across two different screens. The snapshot
+    // is one memcpy into PSRAM -- never internal DRAM, which is the scarce pool
+    // the liveEnsureBuffers landmine is about -- and it is freed when the
+    // response is destroyed.
+    //
+    // Under rotation 3 the canvas is stored panel-side up: a landscape pixel
+    // (x, y) lives at (479 - x) * 320 + y. See
+    // Arduino_Canvas::writePixelPreclipped().
+    //
+    // What this is and is not: it is what LVGL drew. Geometry, text,
+    // translation, truncation -- reliable. Colour as the eye sees it, backlight,
+    // panel rendering -- not. Those are settled by looking at the device.
+    server.on("/screen.bmp", HTTP_GET, [](AsyncWebServerRequest *request){
+        if (!gDisplayReady || gfx == nullptr) {
+            request->send(503, "application/json", "{\"error\":\"no display\"}");
+            return;
+        }
+        uint16_t *fb = gfx->getFramebuffer();
+        if (!fb) {
+            request->send(503, "application/json", "{\"error\":\"no framebuffer\"}");
+            return;
+        }
+
+        const size_t pixels = (size_t)SCREEN_W * SCREEN_H;
+        uint16_t *snap = (uint16_t *)heap_caps_malloc(pixels * 2, MALLOC_CAP_SPIRAM);
+        if (!snap) {
+            request->send(503, "application/json", "{\"error\":\"out of PSRAM\"}");
+            return;
+        }
+        memcpy(snap, fb, pixels * 2);
+
+        // 24-bit BMP, top-down (negative height), no palette. 480 * 3 is a
+        // multiple of 4, so no row padding is needed.
+        static uint8_t hdr[BMP_HEADER_LEN];
+        const uint32_t imgLen  = (uint32_t)SCREEN_W * SCREEN_H * 3;
+        const uint32_t fileLen = BMP_HEADER_LEN + imgLen;
+        memset(hdr, 0, sizeof(hdr));
+        hdr[0] = 'B'; hdr[1] = 'M';
+        auto put32 = [&](int at, uint32_t v) {
+            hdr[at] = v; hdr[at+1] = v >> 8; hdr[at+2] = v >> 16; hdr[at+3] = v >> 24;
+        };
+        put32(2, fileLen);
+        put32(10, BMP_HEADER_LEN);
+        put32(14, 40);
+        put32(18, SCREEN_W);
+        put32(22, (uint32_t)(-(int32_t)SCREEN_H));   // top-down
+        hdr[26] = 1;            // planes
+        hdr[28] = 24;           // bits per pixel
+        put32(34, imgLen);
+
+        std::shared_ptr<uint16_t> keep(snap, [](uint16_t *p){ heap_caps_free(p); });
+        AsyncWebServerResponse *r = request->beginResponse(
+            "image/bmp", fileLen,
+            [keep](uint8_t *out, size_t maxLen, size_t index) -> size_t {
+                const uint16_t *src = keep.get();
+                const uint32_t imgBytes = (uint32_t)SCREEN_W * SCREEN_H * 3;
+                const uint32_t total    = BMP_HEADER_LEN + imgBytes;
+                size_t n = 0;
+                while (n < maxLen) {
+                    const uint32_t off = (uint32_t)index + n;
+                    if (off >= total) break;
+                    if (off < BMP_HEADER_LEN) { out[n++] = hdr[off]; continue; }
+                    const uint32_t b   = off - BMP_HEADER_LEN;
+                    const uint32_t pix = b / 3;
+                    const uint32_t row = pix / SCREEN_W;
+                    const uint32_t col = pix % SCREEN_W;
+                    const uint16_t p   = src[(uint32_t)(SCREEN_W - 1 - col) * SCREEN_H + row];
+                    const uint8_t  r5 = (p >> 11) & 0x1F;
+                    const uint8_t  g6 = (p >> 5)  & 0x3F;
+                    const uint8_t  b5 =  p        & 0x1F;
+                    switch (b % 3) {                       // BMP is BGR
+                        case 0: out[n++] = (uint8_t)((b5 << 3) | (b5 >> 2)); break;
+                        case 1: out[n++] = (uint8_t)((g6 << 2) | (g6 >> 4)); break;
+                        default: out[n++] = (uint8_t)((r5 << 3) | (r5 >> 2)); break;
+                    }
+                }
+                return n;
+            });
+        r->addHeader("Cache-Control", "no-store");
+        request->send(r);
+    });
+
+    // A tap, or a swipe with x2/y2. Coordinates are the panel's own 480x320
+    // landscape space, the same one tsRead() hands to LVGL.
+    //
+    // The response is deliberately late: it returns once the press has been
+    // consumed and the screen has repainted, so a caller can run tap and then
+    // screen.bmp back to back without inventing a delay. The waiting is done by
+    // returning RESPONSE_TRY_AGAIN rather than by sleeping -- sleeping here
+    // would block the async TCP task and every other request with it, which is
+    // the trap already written up over handleWeightPushBody().
+    //
+    // It does not bypass screen sleep. The injected press goes through
+    // tsRead(), so on a dark panel it wakes the scale and is swallowed exactly
+    // as a finger would be. A remote command must never act on a screen nobody
+    // can see.
+    server.on("/api/tap", HTTP_GET, [](AsyncWebServerRequest *request){
+        auto qi = [&](const char *k, int dflt) -> int {
+            return request->hasParam(k) ? request->getParam(k)->value().toInt() : dflt;
+        };
+        const int x = qi("x", -1), y = qi("y", -1);
+        const int x2 = qi("x2", -1), y2 = qi("y2", -1);
+        if (x < 0 || x >= 480 || y < 0 || y >= 320) {
+            request->send(400, "application/json",
+                          "{\"error\":\"x and y required, 0..479 / 0..319\"}");
+            return;
+        }
+        const bool swipe = (x2 >= 0 && x2 < 480 && y2 >= 0 && y2 < 320);
+
+        gLiveTapX     = (int16_t)x;
+        gLiveTapY     = (int16_t)y;
+        gLiveTapX2    = (int16_t)(swipe ? x2 : x);
+        gLiveTapY2    = (int16_t)(swipe ? y2 : y);
+        gLiveTapReads = 0;
+        gLiveTapAtMs  = millis();
+        gLiveTapSteps = swipe ? SCREEN_SWIPE_STEPS : 0;
+        gLiveTapPhase = LIVE_TAP_PRESS;   // set last: it arms the machine
+
+        // Settled means the frame counter has stopped moving, not that it moved
+        // once. A screen change takes several repaints, and answering on the
+        // first one hands back a picture of a transition -- half the new screen
+        // over half the old one. That is what the first version did.
+        struct TapWait { uint32_t seq, quietSince, consumedAt, giveUpAt, armedAt, polls; };
+        auto w = std::make_shared<TapWait>();
+        w->seq        = gLiveFrameSeq;
+        w->quietSince = millis();
+        w->consumedAt = 0;
+        w->giveUpAt   = millis() + SCREEN_SETTLE_MAX_MS;
+        w->armedAt    = millis();
+        w->polls      = 0;
+
+        AsyncWebServerResponse *r = request->beginChunkedResponse(
+            "application/json",
+            [w](uint8_t *buf, size_t maxLen, size_t index) -> size_t {
+                if (index) return 0;                       // body already sent
+                const uint32_t now = millis();
+                w->polls++;
+                const uint32_t seq = gLiveFrameSeq;
+                if (seq != w->seq) { w->seq = seq; w->quietSince = now; }
+                const bool consumed = (gLiveTapPhase == LIVE_TAP_IDLE);
+                if (consumed && !w->consumedAt) w->consumedAt = now;
+                // Quiet is the fast path. It is not always reachable: the
+                // settings list rebuilds itself twice a second to pick up an
+                // account or a battery change, so its frame counter never goes
+                // still and waiting for silence there costs the full timeout on
+                // every call. Past SCREEN_DRAWN_MS since the press was taken,
+                // the screen has had time to finish whatever it started.
+                const bool quiet = (now - w->quietSince) >= SCREEN_QUIET_MS;
+                const bool drawn = w->consumedAt &&
+                                   (now - w->consumedAt) >= SCREEN_DRAWN_MS;
+                const bool expired = (int32_t)(now - w->giveUpAt) >= 0;
+                if (!(consumed && (quiet || drawn)) && !expired)
+                    return RESPONSE_TRY_AGAIN;
+                // `settled` says the frame counter actually went still.
+                // `took` is there because a caller that sees it climb towards
+                // the timeout is looking at a screen that never stops
+                // repainting, which is worth knowing.
+                const int n = snprintf((char *)buf, maxLen,
+                                       "{\"ok\":true,\"frame\":%lu,\"settled\":%s,\"took\":%lu}",
+                                       (unsigned long)seq,
+                                       (consumed && !expired) ? "true" : "false",
+                                       (unsigned long)(now - w->armedAt));
+                return (size_t)((n > 0 && (size_t)n <= maxLen) ? n : 0);
+            });
+        r->addHeader("Cache-Control", "no-store");
+        request->send(r);
     });
 
 
