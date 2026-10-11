@@ -304,8 +304,8 @@ the same `font_latin_*` faces (Cyrillic U+0400–045F plus `Ґ ґ`, see
 `scripts/make-latin-font.sh`); Dutch needs nothing beyond Latin-1. Write a new
 string spelled correctly and let the guards decide.
 
-The web UI's translations are a separate set: `data/www/locales/*.json` (9 files, same
-language set as the firmware since PT-PT joined it).
+The web UI's translations are a separate set: `data/www/locales/*.json` (11 files, the
+same language set as the firmware).
 
 ## Repository conventions
 
