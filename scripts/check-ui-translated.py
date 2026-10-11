@@ -44,9 +44,6 @@ INO  = ROOT / "TigerTagSplashESP32" / "TigerTagSplashESP32.ino"
 ALLOWED = {
     "Tiger Scale":
         "the product name. It is the same word in every language.",
-    "%u min":
-        "'min' is the SI-style abbreviation for minute and is not translated in "
-        "any of the languages the table carries.",
     "Language":
         "first-boot step 1, before any language has been chosen. Deliberate and "
         "commented at the call site: there is no language to render it in yet.",

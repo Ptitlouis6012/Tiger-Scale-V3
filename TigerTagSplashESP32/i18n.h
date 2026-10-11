@@ -188,6 +188,8 @@ enum LangKey : uint8_t {
     I18N_POWER_OFF_Q,
     I18N_POWER_OFF_USB,
     I18N_POWER_OFF_NEEDS_BATT,
+    I18N_UNIT_MIN,
+    I18N_UNIT_HOUR,
     I18N_COUNT,
 };
 
@@ -354,6 +356,8 @@ static const char* const kStrings[NUM_LANGS][I18N_COUNT] = {
           /* POWER_OFF_Q      */ "Turn the scale off? To switch it back on, plug in the USB cable.",
           /* POWER_OFF_USB    */ "Unplug USB",
           /* POWER_OFF_NEEDS_BATT */ "Unplug the USB cable to switch your TigerScale off.",
+          /* UNIT_MIN         */ "min",
+          /* UNIT_HOUR        */ "h",
     },
     // PT (Brazilian Portuguese — Studio's "pt")
     {
@@ -514,6 +518,8 @@ static const char* const kStrings[NUM_LANGS][I18N_COUNT] = {
           /* POWER_OFF_Q      */ "Desligar a balança? Para ligar de novo, conecte o cabo USB.",
           /* POWER_OFF_USB    */ "Desconecte o USB",
           /* POWER_OFF_NEEDS_BATT */ "Desconecte o cabo USB para desligar a sua TigerScale.",
+          /* UNIT_MIN         */ "min",
+          /* UNIT_HOUR        */ "h",
     },
     // FR
     {
@@ -674,6 +680,8 @@ static const char* const kStrings[NUM_LANGS][I18N_COUNT] = {
           /* POWER_OFF_Q      */ "Éteindre la balance ? Pour la rallumer, rebranchez le câble USB.",
           /* POWER_OFF_USB    */ "Débranchez l'USB",
           /* POWER_OFF_NEEDS_BATT */ "Débranchez le câble USB pour éteindre votre TigerScale.",
+          /* UNIT_MIN         */ "min",
+          /* UNIT_HOUR        */ "h",
     },
     // ES
     {
@@ -834,6 +842,8 @@ static const char* const kStrings[NUM_LANGS][I18N_COUNT] = {
           /* POWER_OFF_Q      */ "¿Apagar la báscula? Para encenderla, conecta el cable USB.",
           /* POWER_OFF_USB    */ "Desconecta el USB",
           /* POWER_OFF_NEEDS_BATT */ "Desconecta el cable USB para apagar tu TigerScale.",
+          /* UNIT_MIN         */ "min",
+          /* UNIT_HOUR        */ "h",
     },
     // DE
     {
@@ -994,6 +1004,8 @@ static const char* const kStrings[NUM_LANGS][I18N_COUNT] = {
           /* POWER_OFF_Q      */ "Waage ausschalten? Zum Einschalten das USB-Kabel anschließen.",
           /* POWER_OFF_USB    */ "USB abziehen",
           /* POWER_OFF_NEEDS_BATT */ "USB-Kabel abziehen, um die TigerScale auszuschalten.",
+          /* UNIT_MIN         */ "Min.",
+          /* UNIT_HOUR        */ "Std.",
     },
     // ZH (Han characters, not pinyin)
     // The glyphs come from a generated subset font — scripts/make-cjk-font.sh —
@@ -1160,6 +1172,8 @@ static const char* const kStrings[NUM_LANGS][I18N_COUNT] = {
         /* POWER_OFF_Q      */ "关闭秤? 重新插入 USB 线即可开机。",
         /* POWER_OFF_USB    */ "请拔下 USB",
         /* POWER_OFF_NEEDS_BATT */ "拔下 USB 线以关闭 TigerScale。",
+        /* UNIT_MIN         */ "分钟",
+        /* UNIT_HOUR        */ "小时",
     },
     // IT
     {
@@ -1320,6 +1334,8 @@ static const char* const kStrings[NUM_LANGS][I18N_COUNT] = {
           /* POWER_OFF_Q      */ "Spegnere la bilancia? Per riaccenderla, collega il cavo USB.",
           /* POWER_OFF_USB    */ "Scollega l'USB",
           /* POWER_OFF_NEEDS_BATT */ "Scollega il cavo USB per spegnere la tua TigerScale.",
+          /* UNIT_MIN         */ "min",
+          /* UNIT_HOUR        */ "h",
     },
     // PL
     {
@@ -1480,6 +1496,8 @@ static const char* const kStrings[NUM_LANGS][I18N_COUNT] = {
           /* POWER_OFF_Q      */ "Wyłączyć wagę? Aby włączyć ponownie, podłącz kabel USB.",
           /* POWER_OFF_USB    */ "Odłącz USB",
           /* POWER_OFF_NEEDS_BATT */ "Odłącz kabel USB, aby wyłączyć TigerScale.",
+          /* UNIT_MIN         */ "min",
+          /* UNIT_HOUR        */ "godz.",
     },
     // PT-PT (European Portuguese — Studio's "pt-pt")
     {
@@ -1640,6 +1658,8 @@ static const char* const kStrings[NUM_LANGS][I18N_COUNT] = {
         /* POWER_OFF_Q      */ "Desligar a balança? Para ligar novamente, ligue o cabo USB.",
         /* POWER_OFF_USB    */ "Desligue o USB",
         /* POWER_OFF_NEEDS_BATT */ "Desligue o cabo USB para desligar a sua TigerScale.",
+        /* UNIT_MIN         */ "min",
+        /* UNIT_HOUR        */ "h",
     },
     // RU (Russian — Studio's "ru")
     {
@@ -1800,6 +1820,8 @@ static const char* const kStrings[NUM_LANGS][I18N_COUNT] = {
         /* POWER_OFF_Q          */ "Выключить весы? Чтобы включить снова, подключите USB-кабель.",
         /* POWER_OFF_USB        */ "Отключите USB",
         /* POWER_OFF_NEEDS_BATT */ "Отключите USB-кабель, чтобы выключить TigerScale.",
+        /* UNIT_MIN         */ "мин",
+        /* UNIT_HOUR        */ "ч",
     },
     // NL (Dutch — Studio's "nl")
     {
@@ -1960,6 +1982,8 @@ static const char* const kStrings[NUM_LANGS][I18N_COUNT] = {
         /* POWER_OFF_Q          */ "De weegschaal uitschakelen? Steek de USB-kabel erin om hem weer aan te zetten.",
         /* POWER_OFF_USB        */ "Koppel USB los",
         /* POWER_OFF_NEEDS_BATT */ "Koppel de USB-kabel los om je TigerScale uit te schakelen.",
+        /* UNIT_MIN         */ "min",
+        /* UNIT_HOUR        */ "u",
     },
 };
 

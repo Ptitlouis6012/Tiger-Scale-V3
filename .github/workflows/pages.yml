@@ -42,6 +42,7 @@ on:
     branches: [main]
     paths:
       - 'web-installer/**'
+      - 'llms.txt'
       - '.github/workflows/pages.yml'
       - 'scripts/fetch-published-site.py'
       - 'scripts/make-manifest.py'
@@ -117,6 +118,11 @@ jobs:
           # the above: web-installer/ holds no version.json, no manifest-*.json
           # and no firmware/ directory.
           cp -R web-installer/. pages/
+          # llms.txt has one copy, at the repository root, because that is the one
+          # check-llms-txt.py holds true. A second copy under web-installer/ was
+          # what got published, and it went on describing a build matrix that no
+          # longer existed while the checked one stayed current.
+          cp llms.txt pages/llms.txt
           echo "--- pages/ ---"; find pages -type f | sort
 
       - name: The manifest must describe the release it claims

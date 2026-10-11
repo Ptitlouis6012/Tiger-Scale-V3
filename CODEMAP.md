@@ -1,6 +1,6 @@
 # CODEMAP — TigerTagSplashESP32.ino
 
-Navigation map for the firmware's single **~12 500-line** source file. Never read
+Navigation map for the firmware's single **~16 500-line** source file. Never read
 it whole; that is the entire point of this document.
 
 **The workflow, every time:**
@@ -33,26 +33,26 @@ the source, so this table cannot silently disagree with the file.
 | 6 | Configuration variables | 1470–1889 |
 | 7 | Display / weigh rendering | 1890–2667 |
 | 8 | Cloud parsing | 2668–2682 |
-| 9 | WiFi setup + every touch/LVGL settings screen | 2683–7500 |
-| 10 | LittleFS | 7501–7800 |
-| 11 | Firebase authentication + Firestore | 7801–9462 |
-| 13 | WebSocket | 9463–9489 |
-| 14 | Cloud worker task (core 0) | 9490–9624 |
-| 15 | Unified WS frame builder | 9625–9749 |
-| 16 | Weight filter helpers | 9750–9764 |
-| 17 | Post-send state reset | 9765–9785 |
-| 18 | Shared weight push handler | 9786–9889 |
-| 19 | Web server (all HTTP routes) | 9890–10913 |
-| 20 | Cloud communication | 10914–11096 |
-| 21 | Weigh workflow state machine | 11097–11604 |
-| 22 | mDNS | 11605–11642 |
-| 23 | Scale (HX711 init, filtering, calibration) | 11643–11813 |
-| AUDIO | ES8311 codec beep (I2S slave, I2C 0x18) | 11814–11931 |
-| 24 | RFID (PN532 via `PN532Reader`, tag reading) | 11932–12868 |
-| 25 | OTA (firmware + filesystem update) | 12869–13548 |
-| LVGL | LVGL bridge + main weigh screen | 13549–14488 |
-| LIVE | Remote live view: the screen out, taps back in | 14489–15333 |
-| 26 | `setup()` + `loop()` | 15334–16499 |
+| 9 | WiFi setup + every touch/LVGL settings screen | 2683–7501 |
+| 10 | LittleFS | 7502–7801 |
+| 11 | Firebase authentication + Firestore | 7802–9463 |
+| 13 | WebSocket | 9464–9490 |
+| 14 | Cloud worker task (core 0) | 9491–9625 |
+| 15 | Unified WS frame builder | 9626–9750 |
+| 16 | Weight filter helpers | 9751–9765 |
+| 17 | Post-send state reset | 9766–9786 |
+| 18 | Shared weight push handler | 9787–9890 |
+| 19 | Web server (all HTTP routes) | 9891–10914 |
+| 20 | Cloud communication | 10915–11097 |
+| 21 | Weigh workflow state machine | 11098–11605 |
+| 22 | mDNS | 11606–11643 |
+| 23 | Scale (HX711 init, filtering, calibration) | 11644–11814 |
+| AUDIO | ES8311 codec beep (I2S slave, I2C 0x18) | 11815–11932 |
+| 24 | RFID (PN532 via `PN532Reader`, tag reading) | 11933–12869 |
+| 25 | OTA (firmware + filesystem update) | 12870–13549 |
+| LVGL | LVGL bridge + main weigh screen | 13550–14489 |
+| LIVE | Remote live view: the screen out, taps back in | 14490–15334 |
+| 26 | `setup()` + `loop()` | 15335–16500 |
 
 Two gaps and two oddities in that numbering, all deliberate:
 
@@ -88,50 +88,50 @@ Two gaps and two oddities in that numbering, all deliberate:
 | `tsNumericInput` | 3784 | §9 |
 | `runCalibrationWizard` | 3956 | §9 |
 | `runLanguageSettings` | 4458 | §9 |
-| `runHardwareTest` | 4888 | §9 |
-| `lvglAskYesNo` | 5178 | §9 |
-| `runOtaMenu` | 6504 | §9 |
-| `runSettingsMenu` | 6870 | §9 |
-| `setupWiFi` | 7438 | §9 |
-| `setupFileSystem` | 7615 | §10 |
-| `firebaseSignIn` | 7812 | §11 |
-| `fetchApiKeyFromFirestore` | 7898 | §11 |
-| `syncClockFromFirestore` | 8056 | §11 |
-| `readInventoryContainerWeight` | 8469 | §11 |
-| `pushLatestEventToFirestore` | 9149 | §11 |
-| `buildWsFrame` | 9632 | §15 |
-| `resetWeightFilters` | 9753 | §16 |
-| `resetAfterSuccessfulSend` | 9768 | §17 |
-| `handleWeightPushBody` | 9789 | §18 |
-| `setupWebServer` | 9894 | §19 |
-| `sendSingleUidToCloud` | 10917 | §20 |
-| `parseCloudSpoolMeta` | 10973 | §20 |
-| `pushWeightToCloud` | 11023 | §20 |
-| `fetchMetaFromApiByUid` | 11061 | §20 |
-| `handleWeighWorkflow` | 11150 | §21 |
-| `startMDNS` | 11608 | §22 |
-| `setupScale` | 11646 | §23 |
-| `isRapidChange` | 11677 | §23 |
-| `readWeight` | 11713 | §23 |
-| `playSoundTheme` | 11893 | §AUDIO |
-| `rfidSelectReader` | 11987 | §24 |
-| `normalizeRfidHwConfig` | 12041 | §24 |
-| `setupRFID` | 12051 | §24 |
-| `setupServo` | 12257 | §24 |
-| `processAutoTare` | 12271 | §24 |
-| `fetchMetaFromFirestore` | 12579 | §24 |
-| `readTigerTagMetadata` | 12673 | §24 |
-| `pollRFIDReader` | 12744 | §24 |
-| `recoverRFIDReaderIfNeeded` | 12827 | §24 |
-| `isDuplicateRecentUid` | 12847 | §24 |
-| `isUidLatched` | 12851 | §24 |
-| `finishRfidSession` | 12863 | §24 |
-| `otaApply` | 13056 | §25 |
-| `otaFetchLatest` | 13198 | §25 |
-| `lvglBuildMainScreen` | 13803 | §LVGL |
-| `lvglUpdateMainScreen` | 14231 | §LVGL |
-| `setup` | 15353 | §26 |
-| `loop` | 15524 | §26 |
+| `runHardwareTest` | 4889 | §9 |
+| `lvglAskYesNo` | 5179 | §9 |
+| `runOtaMenu` | 6505 | §9 |
+| `runSettingsMenu` | 6871 | §9 |
+| `setupWiFi` | 7439 | §9 |
+| `setupFileSystem` | 7616 | §10 |
+| `firebaseSignIn` | 7813 | §11 |
+| `fetchApiKeyFromFirestore` | 7899 | §11 |
+| `syncClockFromFirestore` | 8057 | §11 |
+| `readInventoryContainerWeight` | 8470 | §11 |
+| `pushLatestEventToFirestore` | 9150 | §11 |
+| `buildWsFrame` | 9633 | §15 |
+| `resetWeightFilters` | 9754 | §16 |
+| `resetAfterSuccessfulSend` | 9769 | §17 |
+| `handleWeightPushBody` | 9790 | §18 |
+| `setupWebServer` | 9895 | §19 |
+| `sendSingleUidToCloud` | 10918 | §20 |
+| `parseCloudSpoolMeta` | 10974 | §20 |
+| `pushWeightToCloud` | 11024 | §20 |
+| `fetchMetaFromApiByUid` | 11062 | §20 |
+| `handleWeighWorkflow` | 11151 | §21 |
+| `startMDNS` | 11609 | §22 |
+| `setupScale` | 11647 | §23 |
+| `isRapidChange` | 11678 | §23 |
+| `readWeight` | 11714 | §23 |
+| `playSoundTheme` | 11894 | §AUDIO |
+| `rfidSelectReader` | 11988 | §24 |
+| `normalizeRfidHwConfig` | 12042 | §24 |
+| `setupRFID` | 12052 | §24 |
+| `setupServo` | 12258 | §24 |
+| `processAutoTare` | 12272 | §24 |
+| `fetchMetaFromFirestore` | 12580 | §24 |
+| `readTigerTagMetadata` | 12674 | §24 |
+| `pollRFIDReader` | 12745 | §24 |
+| `recoverRFIDReaderIfNeeded` | 12828 | §24 |
+| `isDuplicateRecentUid` | 12848 | §24 |
+| `isUidLatched` | 12852 | §24 |
+| `finishRfidSession` | 12864 | §24 |
+| `otaApply` | 13057 | §25 |
+| `otaFetchLatest` | 13199 | §25 |
+| `lvglBuildMainScreen` | 13804 | §LVGL |
+| `lvglUpdateMainScreen` | 14232 | §LVGL |
+| `setup` | 15354 | §26 |
+| `loop` | 15525 | §26 |
 
 ## Landmines — read the note before editing these
 
@@ -168,7 +168,7 @@ a debugging session at least once.
 
 ## Parallel-file pattern — i18n
 
-`TigerTagSplashESP32/i18n.h` holds **157 keys × 11 language blocks**
+`TigerTagSplashESP32/i18n.h` holds **159 keys × 11 language blocks**
 (EN/PT/FR/ES/DE/ZH/IT/PL/PT-PT/RU/NL — Studio Manager's exact list). Adding one key
 means editing **all 11 blocks**, in the
 same order as the enum. `bash scripts/check-i18n.sh` must exit 0 before you

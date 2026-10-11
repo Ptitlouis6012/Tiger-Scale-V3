@@ -7,7 +7,7 @@ short version of what follows.
 
 ## Shape of the code
 
-One Arduino C++ file, **about 12 500 lines**, divided into 26 numbered sections plus
+One Arduino C++ file, **about 16 500 lines**, divided into 26 numbered sections plus
 `§AUDIO` and `§LVGL`. The table of contents at the top of the file is generated
 by `bash scripts/update_toc.sh` from the `// §N — TITLE` banners, so it cannot
 silently disagree with the file.

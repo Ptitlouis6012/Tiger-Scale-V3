@@ -5,7 +5,7 @@ Tool-agnostic conventions for this repository. If you are Claude Code, read
 
 ## The one rule that matters most
 
-**The firmware is a single ~12 500-line file. Never read it whole.**
+**The firmware is a single ~16 500-line file. Never read it whole.**
 
 ```
 1. Open CODEMAP.md, find the section or function by name

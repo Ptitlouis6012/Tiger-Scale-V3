@@ -14,7 +14,7 @@ Contributions are genuinely welcome, and a few areas would help a lot right now:
 
 Two documents will save you the most time:
 
-- **[CODEMAP.md](CODEMAP.md)** — the firmware is one ~12 500-line file. This maps
+- **[CODEMAP.md](CODEMAP.md)** — the firmware is one ~16 500-line file. This maps
   every section and function so you can go straight to the part you need. Its
   **Landmines** table lists functions with non-obvious constraints; read the row
   for anything you're about to touch.

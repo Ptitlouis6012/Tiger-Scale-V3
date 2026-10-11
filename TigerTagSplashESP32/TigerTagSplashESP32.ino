@@ -23,26 +23,26 @@
 //   CONFIGURATION VARIABLES                               1470- 1889
 //   OLED DISPLAY                                          1890- 2667
 //   CLOUD PARSING                                         2668- 2682
-//   WIFI SETUP                                            2683- 7500
-//   LITTLEFS                                              7501- 7800
-//   FIREBASE AUTHENTICATION                               7801- 9462
-//   WEBSOCKET                                             9463- 9489
-//   CLOUD WORKER TASK  (non-blocking Firestore on core 0)  9490- 9624
-//   UNIFIED WS FRAME BUILDER                              9625- 9749
-//   WEIGHT FILTER HELPERS                                 9750- 9764
-//   POST-SEND STATE RESET (shared by all send paths)      9765- 9785
-//   SHARED WEIGHT PUSH HANDLER (used by /api/weight and /api/push-weight)  9786- 9889
-//   WEB SERVER                                            9890-10913
-//   CLOUD COMMUNICATION                                  10914-11096
-//   WEIGH WORKFLOW  (IDLE → SCANNING → STABLE_WAIT → SENDING) 11097-11604
-//   mDNS                                                 11605-11642
-//   SCALE                                                11643-11813
-//   ES8311 codec beep (I2S slave mode, Wire I2C @ 0x18)  11814-11931
-//   RFID                                                 11932-12868
-//   OTA — Over-the-air firmware + filesystem update    12869-13548
-//   LVGL bridge + main weigh screen                      13549-14488
-//   Remote live view: the screen out, taps back in       14489-15333
-//   SETUP & LOOP                                         15334-16499
+//   WIFI SETUP                                            2683- 7501
+//   LITTLEFS                                              7502- 7801
+//   FIREBASE AUTHENTICATION                               7802- 9463
+//   WEBSOCKET                                             9464- 9490
+//   CLOUD WORKER TASK  (non-blocking Firestore on core 0)  9491- 9625
+//   UNIFIED WS FRAME BUILDER                              9626- 9750
+//   WEIGHT FILTER HELPERS                                 9751- 9765
+//   POST-SEND STATE RESET (shared by all send paths)      9766- 9786
+//   SHARED WEIGHT PUSH HANDLER (used by /api/weight and /api/push-weight)  9787- 9890
+//   WEB SERVER                                            9891-10914
+//   CLOUD COMMUNICATION                                  10915-11097
+//   WEIGH WORKFLOW  (IDLE → SCANNING → STABLE_WAIT → SENDING) 11098-11605
+//   mDNS                                                 11606-11643
+//   SCALE                                                11644-11814
+//   ES8311 codec beep (I2S slave mode, Wire I2C @ 0x18)  11815-11932
+//   RFID                                                 11933-12869
+//   OTA — Over-the-air firmware + filesystem update    12870-13549
+//   LVGL bridge + main weigh screen                      13550-14489
+//   Remote live view: the screen out, taps back in       14490-15334
+//   SETUP & LOOP                                         15335-16500
 //
 //   To regenerate:  bash scripts/update_toc.sh
 // --- TOC END -----------------------------------------------
@@ -4768,9 +4768,10 @@ static void runFirebaseAccountMenu() {
     String syncVal = "--";
     if (gLastCloudSendOkMs > 0) {
         uint32_t mins = (millis() - gLastCloudSendOkMs) / 60000UL;
-        syncVal = (mins < 1)  ? String("<1 min")
-                : (mins < 60) ? String(mins) + " min"
-                              : String(mins / 60) + " h " + String(mins % 60) + " min";
+        String minSfx = String(" ") + t(I18N_UNIT_MIN);
+        syncVal = (mins < 1)  ? String("<1") + minSfx
+                : (mins < 60) ? String(mins) + minSfx
+                              : String(mins / 60) + " " + t(I18N_UNIT_HOUR) + " " + String(mins % 60) + minSfx;
     }
     lv_obj_t *syncRow = row(180, t(I18N_LAST_SYNC));
     lv_obj_t *syncLbl = lv_label_create(syncRow);
@@ -5684,7 +5685,7 @@ static void runScreenSettings() {
         else               lv_obj_clear_state(sw, LV_STATE_CHECKED);
 
         int di = delayIndex();
-        lv_label_set_text_fmt(dlVal, "%u min", (unsigned)gSleepDelayMin);
+        lv_label_set_text_fmt(dlVal, "%u %s", (unsigned)gSleepDelayMin, t(I18N_UNIT_MIN));
         lv_obj_set_style_text_color(dlRowLbl, gSleepEnabled ? LVCOL_MUTED : LVCOL_FAINT, 0);
         lv_obj_set_style_text_color(dlVal,    gSleepEnabled ? LVCOL_TEXT  : LVCOL_FAINT, 0);
         lv_obj_set_style_text_color(dlMinus,  (gSleepEnabled && di > 0)     ? LVCOL_TEXT : (gSleepEnabled ? LVCOL_BORDER : LVCOL_FAINT), 0);
