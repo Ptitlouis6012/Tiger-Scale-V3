@@ -32,17 +32,17 @@
 //   WEIGHT FILTER HELPERS                                 9751- 9765
 //   POST-SEND STATE RESET (shared by all send paths)      9766- 9786
 //   SHARED WEIGHT PUSH HANDLER (used by /api/weight and /api/push-weight)  9787- 9890
-//   WEB SERVER                                            9891-10914
-//   CLOUD COMMUNICATION                                  10915-11097
-//   WEIGH WORKFLOW  (IDLE → SCANNING → STABLE_WAIT → SENDING) 11098-11605
-//   mDNS                                                 11606-11643
-//   SCALE                                                11644-11814
-//   ES8311 codec beep (I2S slave mode, Wire I2C @ 0x18)  11815-11932
-//   RFID                                                 11933-12869
-//   OTA — Over-the-air firmware + filesystem update    12870-13549
-//   LVGL bridge + main weigh screen                      13550-14489
-//   Remote live view: the screen out, taps back in       14490-15334
-//   SETUP & LOOP                                         15335-16500
+//   WEB SERVER                                            9891-10917
+//   CLOUD COMMUNICATION                                  10918-11100
+//   WEIGH WORKFLOW  (IDLE → SCANNING → STABLE_WAIT → SENDING) 11101-11608
+//   mDNS                                                 11609-11646
+//   SCALE                                                11647-11817
+//   ES8311 codec beep (I2S slave mode, Wire I2C @ 0x18)  11818-11935
+//   RFID                                                 11936-12872
+//   OTA — Over-the-air firmware + filesystem update    12873-13552
+//   LVGL bridge + main weigh screen                      13553-14492
+//   Remote live view: the screen out, taps back in       14493-15337
+//   SETUP & LOOP                                         15338-16503
 //
 //   To regenerate:  bash scripts/update_toc.sh
 // --- TOC END -----------------------------------------------
@@ -10034,7 +10034,10 @@ void setupWebServer() {
         // full StaticJsonDocument in silence -- the fields at the end simply stop
         // appearing -- so growing the payload means growing this first.
         StaticJsonDocument<1024> doc;
-        doc["weight"]            = (currentWeight < MIN_WEIGHT_TO_SEND_G) ? 0 : roundWeight(currentWeight);
+        // What the panel shows, signed and unfloored -- the same value the
+        // WebSocket frame carries, so the web UI reads one number whether it is
+        // on the socket or on this polling fallback.
+        doc["weight"]            = roundWeight(currentWeight);
         doc["rawWeight"]         = (float)((int)(currentWeight * 100)) / 100.0f;  // unfiltered, for debug
         doc["uid"]               = lastUID;
         doc["uid_hex"]           = lastUIDHex;

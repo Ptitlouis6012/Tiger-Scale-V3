@@ -42,17 +42,17 @@ the source, so this table cannot silently disagree with the file.
 | 16 | Weight filter helpers | 9751–9765 |
 | 17 | Post-send state reset | 9766–9786 |
 | 18 | Shared weight push handler | 9787–9890 |
-| 19 | Web server (all HTTP routes) | 9891–10914 |
-| 20 | Cloud communication | 10915–11097 |
-| 21 | Weigh workflow state machine | 11098–11605 |
-| 22 | mDNS | 11606–11643 |
-| 23 | Scale (HX711 init, filtering, calibration) | 11644–11814 |
-| AUDIO | ES8311 codec beep (I2S slave, I2C 0x18) | 11815–11932 |
-| 24 | RFID (PN532 via `PN532Reader`, tag reading) | 11933–12869 |
-| 25 | OTA (firmware + filesystem update) | 12870–13549 |
-| LVGL | LVGL bridge + main weigh screen | 13550–14489 |
-| LIVE | Remote live view: the screen out, taps back in | 14490–15334 |
-| 26 | `setup()` + `loop()` | 15335–16500 |
+| 19 | Web server (all HTTP routes) | 9891–10917 |
+| 20 | Cloud communication | 10918–11100 |
+| 21 | Weigh workflow state machine | 11101–11608 |
+| 22 | mDNS | 11609–11646 |
+| 23 | Scale (HX711 init, filtering, calibration) | 11647–11817 |
+| AUDIO | ES8311 codec beep (I2S slave, I2C 0x18) | 11818–11935 |
+| 24 | RFID (PN532 via `PN532Reader`, tag reading) | 11936–12872 |
+| 25 | OTA (firmware + filesystem update) | 12873–13552 |
+| LVGL | LVGL bridge + main weigh screen | 13553–14492 |
+| LIVE | Remote live view: the screen out, taps back in | 14493–15337 |
+| 26 | `setup()` + `loop()` | 15338–16503 |
 
 Two gaps and two oddities in that numbering, all deliberate:
 
@@ -104,34 +104,34 @@ Two gaps and two oddities in that numbering, all deliberate:
 | `resetAfterSuccessfulSend` | 9769 | §17 |
 | `handleWeightPushBody` | 9790 | §18 |
 | `setupWebServer` | 9895 | §19 |
-| `sendSingleUidToCloud` | 10918 | §20 |
-| `parseCloudSpoolMeta` | 10974 | §20 |
-| `pushWeightToCloud` | 11024 | §20 |
-| `fetchMetaFromApiByUid` | 11062 | §20 |
-| `handleWeighWorkflow` | 11151 | §21 |
-| `startMDNS` | 11609 | §22 |
-| `setupScale` | 11647 | §23 |
-| `isRapidChange` | 11678 | §23 |
-| `readWeight` | 11714 | §23 |
-| `playSoundTheme` | 11894 | §AUDIO |
-| `rfidSelectReader` | 11988 | §24 |
-| `normalizeRfidHwConfig` | 12042 | §24 |
-| `setupRFID` | 12052 | §24 |
-| `setupServo` | 12258 | §24 |
-| `processAutoTare` | 12272 | §24 |
-| `fetchMetaFromFirestore` | 12580 | §24 |
-| `readTigerTagMetadata` | 12674 | §24 |
-| `pollRFIDReader` | 12745 | §24 |
-| `recoverRFIDReaderIfNeeded` | 12828 | §24 |
-| `isDuplicateRecentUid` | 12848 | §24 |
-| `isUidLatched` | 12852 | §24 |
-| `finishRfidSession` | 12864 | §24 |
-| `otaApply` | 13057 | §25 |
-| `otaFetchLatest` | 13199 | §25 |
-| `lvglBuildMainScreen` | 13804 | §LVGL |
-| `lvglUpdateMainScreen` | 14232 | §LVGL |
-| `setup` | 15354 | §26 |
-| `loop` | 15525 | §26 |
+| `sendSingleUidToCloud` | 10921 | §20 |
+| `parseCloudSpoolMeta` | 10977 | §20 |
+| `pushWeightToCloud` | 11027 | §20 |
+| `fetchMetaFromApiByUid` | 11065 | §20 |
+| `handleWeighWorkflow` | 11154 | §21 |
+| `startMDNS` | 11612 | §22 |
+| `setupScale` | 11650 | §23 |
+| `isRapidChange` | 11681 | §23 |
+| `readWeight` | 11717 | §23 |
+| `playSoundTheme` | 11897 | §AUDIO |
+| `rfidSelectReader` | 11991 | §24 |
+| `normalizeRfidHwConfig` | 12045 | §24 |
+| `setupRFID` | 12055 | §24 |
+| `setupServo` | 12261 | §24 |
+| `processAutoTare` | 12275 | §24 |
+| `fetchMetaFromFirestore` | 12583 | §24 |
+| `readTigerTagMetadata` | 12677 | §24 |
+| `pollRFIDReader` | 12748 | §24 |
+| `recoverRFIDReaderIfNeeded` | 12831 | §24 |
+| `isDuplicateRecentUid` | 12851 | §24 |
+| `isUidLatched` | 12855 | §24 |
+| `finishRfidSession` | 12867 | §24 |
+| `otaApply` | 13060 | §25 |
+| `otaFetchLatest` | 13202 | §25 |
+| `lvglBuildMainScreen` | 13807 | §LVGL |
+| `lvglUpdateMainScreen` | 14235 | §LVGL |
+| `setup` | 15357 | §26 |
+| `loop` | 15528 | §26 |
 
 ## Landmines — read the note before editing these
 
@@ -168,7 +168,7 @@ a debugging session at least once.
 
 ## Parallel-file pattern — i18n
 
-`TigerTagSplashESP32/i18n.h` holds **159 keys × 11 language blocks**
+`TigerTagSplashESP32/i18n.h` holds **158 keys × 11 language blocks**
 (EN/PT/FR/ES/DE/ZH/IT/PL/PT-PT/RU/NL — Studio Manager's exact list). Adding one key
 means editing **all 11 blocks**, in the
 same order as the enum. `bash scripts/check-i18n.sh` must exit 0 before you
