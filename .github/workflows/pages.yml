@@ -41,8 +41,11 @@ on:
   push:
     branches: [main]
     paths:
+      # Not llms.txt, although it is published: every release commit edits its
+      # "reviewed against" line, so a trigger here starts a second deployment
+      # beside release.yml's for the same commit. That is what left v3.9.0's site
+      # advertising v3.8.1. An llms.txt edit goes live with the hourly run below.
       - 'web-installer/**'
-      - 'llms.txt'
       - '.github/workflows/pages.yml'
       - 'scripts/fetch-published-site.py'
       - 'scripts/make-manifest.py'
