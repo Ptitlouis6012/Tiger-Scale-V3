@@ -205,8 +205,8 @@ a real unit, not a transcription of the vendor demo:
 | 0x34 | AXP2101 PMIC | Battery level, charge state |
 | 0x38 | FT6336 touch controller | -3.5 only |
 | 0x3B | AXS5106L touch controller | -3.5B only |
-| 0x51 | **unidentified** — almost certainly an RTC | 0x51 is the standard address for a PCF8563 / BM8563. Nothing in the firmware talks to it. |
-| 0x6B | **unidentified** | Nothing in the firmware talks to it. |
+| 0x51 | PCF85063 real-time clock | Battery-backed through the AXP2101. Nothing in the firmware talks to it yet (#21). |
+| 0x6B | QMI8658 6-axis IMU | Nothing in the firmware talks to it. |
 | 0x24 | PN532 | I²C build only — fixed address, cannot be changed |
 
 Three things worth knowing about that list:
@@ -219,9 +219,11 @@ Three things worth knowing about that list:
   reset now runs on `Wire1` **for the -3.5 only**: the -3.5B has been booting
   without it for months, and giving the whole fleet a new bring-up step to fix a
   board it is not running on would be the wrong trade.
-- **0x51 and 0x6B are unexplained.** If 0x51 is an RTC, the firmware is doing
-  without a real-time clock it may already have — it currently relies on Firestore
-  server timestamps and notes "No NTP — approximate based on…" in the code.
+- **0x51 and 0x6B are on-board parts the firmware does not use**, named by the
+  schematics' `RTC_*` and `IMU_*` nets and the vendor documentation. The PCF85063
+  means the scale has a battery-backed clock it never reads: it relies on
+  Firestore server timestamps instead and notes "No NTP — approximate based on…"
+  in the code (#21).
 - The scan runs at boot on every unit, so it doubles as a wiring health check for
   someone who assembled their own scale. Compare your boot log against this table.
 

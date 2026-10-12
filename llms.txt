@@ -11,7 +11,7 @@ readers, an HX711 load-cell amplifier, an AXP2101 PMIC and an ES8311 audio codec
 The two variants share a netlist and differ on one GPIO, but their panel
 controllers differ — AXS15231B over QSPI on the B, ST7796 over SPI on the other —
 so the board is a build-time choice and the wrong image is a black screen with no
-diagnostic. One Arduino C++ file of about 16 000 lines, built with PlatformIO.
+diagnostic. One Arduino C++ file of about 16 500 lines, built with PlatformIO.
 MIT licensed.
 
 Maintained by the TigerTag Project. Repository:
@@ -40,8 +40,10 @@ against the hardware. Prefer them over inference.
   equivalent include path. PlatformIO only.
 - **The `Wire` I2C bus (GPIO21/22) does not work on this board.** GPIO22 does not
   exist on the ESP32-S3 and GPIO21 goes to the camera connector. The working bus is
-  `Wire1` (SDA=GPIO8, SCL=GPIO7), carrying touch 0x3B, the AXP2101 0x34, the ES8311
-  0x18, a TCA9554 at 0x20 and two undocumented devices at 0x51 and 0x6B.
+  `Wire1` (SDA=GPIO8, SCL=GPIO7), carrying touch (0x3B on the B, 0x38 on the
+  other), the AXP2101 0x34, the ES8311 0x18, a TCA9554 at 0x20 that holds the
+  panel's reset line, and a PCF85063 RTC at 0x51 and a QMI8658 IMU at 0x6B that
+  the firmware does not use.
 - **There is no motor.** `setupServo()` is intentionally a no-op; the servo pin and
   constants remain for a motorised variant that does not exist.
 - **The Firebase Web API key in the source is not a leaked secret.** It is the public
@@ -73,7 +75,7 @@ against the hardware. Prefer them over inference.
 - [AGENTS.md](https://github.com/TigerTag-Project/Tiger-Scale-V3/blob/main/AGENTS.md): tool-agnostic conventions
 - [CLAUDE.md](https://github.com/TigerTag-Project/Tiger-Scale-V3/blob/main/CLAUDE.md): the Claude-specific superset
 
-Do not read the firmware file whole — it is about 16 000 lines. Find the target in
+Do not read the firmware file whole — it is about 16 500 lines. Find the target in
 CODEMAP.md, grep the name, read that region.
 
 One command runs every check CI runs, and it must pass before any change is
@@ -82,9 +84,12 @@ individual guard scripts — that list grows, and a copy of it in this file is a
 that goes stale. `--quick` skips the compile, `--fix` regenerates what is
 regenerable, `--all` builds every environment.
 
-You do not have to photograph the device to see its screen. Settings -> LAN ->
-Live view serves the panel to a browser with taps going back the other way, which
-is how a visual change gets checked without a hardware round-trip.
+You do not have to photograph the device to see its screen. `GET /screen.bmp`
+returns what LVGL last drew, 480x320, and `GET /api/tap?x=&y=` presses the panel
+(add `x2`/`y2` for a swipe); the tap answers only once the screen has finished
+changing, so the two chain without a delay. Neither needs setup or an access
+code. Settings -> LAN -> Live view is the real-time stream, for watching rather
+than checking.
 
 ## Ecosystem
 
@@ -95,7 +100,7 @@ is how a visual change gets checked without a hardware round-trip.
 
 ---
 
-_This summary was reviewed against firmware v3.8.1._ It is re-read and re-affirmed
+_This summary was reviewed against firmware v3.9.0._ It is re-read and re-affirmed
 at every version bump rather than left to age: the facts below describe a specific
 build, and the one that cost this project a session — which build environment is
 the right one — is exactly the kind that changes between releases.
